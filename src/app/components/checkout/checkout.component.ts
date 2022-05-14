@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { toJSDate } from '@ng-bootstrap/ng-bootstrap/datepicker/ngb-calendar';
 import { Country } from 'src/app/common/country';
 import { Order } from 'src/app/common/order';
 import { OrderItem } from 'src/app/common/order-item';
+import { PaymentInfo } from 'src/app/common/payment-info';
 import { Purchase } from 'src/app/common/purchase';
 import { State } from 'src/app/common/state';
 import { CartService } from 'src/app/services/cart.service';
@@ -11,6 +13,7 @@ import { CheckoutService } from 'src/app/services/checkout.service'
 
 import { ShoppingKingFormService } from 'src/app/services/shopping-king-form.service';
 import { ShoppingKingValidators } from 'src/app/validators/shopping-king-validators';
+import { environment } from 'src/environments/environment';
 
 
 @Component({
@@ -34,6 +37,13 @@ export class CheckoutComponent implements OnInit {
   billingAddressStates: State[] = [];
 
   storage: Storage = sessionStorage;
+
+  // initialize Stripe API
+  stripe = Stripe(environment.stripePublishableKey);
+
+  paymentInfo: PaymentInfo = new PaymentInfo();
+  cardElement: any;
+  displayError: any = "";
   
   
   constructor(private formBuilder: FormBuilder,
@@ -43,6 +53,9 @@ export class CheckoutComponent implements OnInit {
               private router: Router) { }
 
   ngOnInit(): void {
+
+    // setup Stripe payment form
+    this.setupStripePaymentForm();
 
     this.reviewCartDetails();
     
@@ -85,36 +98,9 @@ export class CheckoutComponent implements OnInit {
                                 ShoppingKingValidators.notOnlyWhitespace])
       }),
       creditCard: this.formBuilder.group({
-        cardType: new FormControl('', [Validators.required]),
-        nameOnCard:  new FormControl('', [Validators.required, Validators.minLength(2), 
-                                    ShoppingKingValidators.notOnlyWhitespace]),
-        cardNumber: new FormControl('', [Validators.required, Validators.pattern('[0-9]{16}')]),
-        securityCode: new FormControl('', [Validators.required, Validators.pattern('[0-9]{3}')]),
-        expirationMonth: [''],
-        expirationYear: ['']
+
       })
     });
-
-    // populate credit card months
-
-    const startMonth: number = new Date().getMonth() + 1;
-    console.log("startMonth: " + startMonth);
-
-    this.shoppingKingFormService.getCreditCardMonths(startMonth).subscribe(
-      data => {
-        console.log("Retrieved credit card months: " + JSON.stringify(data));
-        this.creditCardMonths = data;
-      }
-    );
-
-    // populate credit card years
-
-    this.shoppingKingFormService.getCreditCardYears().subscribe(
-      data => {
-        console.log("Retrieved credit card years: " + JSON.stringify(data));
-        this.creditCardYears = data;
-      }
-    );
 
     // populate countries
 
@@ -124,6 +110,31 @@ export class CheckoutComponent implements OnInit {
         this.countries = data;
       }
     );
+  }
+  setupStripePaymentForm() {
+    
+    // get a handle to stripe elements
+    var elements = this.stripe.elements();
+
+    // Create a card element ... and hide the zip-code field
+    this.cardElement = elements.create('card',{ hidePostalCode:true });
+
+    // Add an instance of card UI component into 'card-element'
+    this.cardElement.mount('#card-element');
+
+    // Add event binding for the 'change' event on the card element
+    this.cardElement.on('change',(event) =>{
+
+      this.displayError = document.getElementById('card-errors');
+
+      if (event.complete){
+        this.displayError.textContent ="";
+      } else if (event.error){
+        // show validation error customer
+        this.displayError.textContent = event.error.message;
+      }
+    })
+
   }
   reviewCartDetails() {
     
