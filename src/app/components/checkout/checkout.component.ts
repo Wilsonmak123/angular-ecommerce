@@ -27,7 +27,7 @@ export class CheckoutComponent implements OnInit {
 
   totalPrice: number = 0;
   totalQuantity: number = 0;
-  
+
   creditCardYears: number[] = [];
   creditCardMonths: number[] = [];
 
@@ -44,13 +44,13 @@ export class CheckoutComponent implements OnInit {
   paymentInfo: PaymentInfo = new PaymentInfo();
   cardElement: any;
   displayError: any = "";
-  
-  
+
+
   constructor(private formBuilder: FormBuilder,
-              private shoppingKingFormService: ShoppingKingFormService,
-              private cartService: CartService,
-              private checkoutService: CheckoutService,
-              private router: Router) { }
+    private shoppingKingFormService: ShoppingKingFormService,
+    private cartService: CartService,
+    private checkoutService: CheckoutService,
+    private router: Router) { }
 
   ngOnInit(): void {
 
@@ -58,44 +58,44 @@ export class CheckoutComponent implements OnInit {
     this.setupStripePaymentForm();
 
     this.reviewCartDetails();
-    
+
     // read the user's email address from browser storage
     const theEmail = JSON.parse(this.storage.getItem('userEmail'));
 
     this.checkoutFormGroup = this.formBuilder.group({
       customer: this.formBuilder.group({
-        firstName: new FormControl('', 
-                              [Validators.required, 
-                               Validators.minLength(2), 
-                               ShoppingKingValidators.notOnlyWhitespace]),
+        firstName: new FormControl('',
+          [Validators.required,
+          Validators.minLength(2),
+          ShoppingKingValidators.notOnlyWhitespace]),
 
-        lastName:  new FormControl('', 
-                              [Validators.required, 
-                               Validators.minLength(2), 
-                               ShoppingKingValidators.notOnlyWhitespace]),
-                               
+        lastName: new FormControl('',
+          [Validators.required,
+          Validators.minLength(2),
+          ShoppingKingValidators.notOnlyWhitespace]),
+
         email: new FormControl(theEmail,
-                              [Validators.required, Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$')])
+          [Validators.required, Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$')])
       }),
       shippingAddress: this.formBuilder.group({
-        street: new FormControl('', [Validators.required, Validators.minLength(2), 
-                                    ShoppingKingValidators.notOnlyWhitespace]),
-        city: new FormControl('', [Validators.required, Validators.minLength(2), 
-                                    ShoppingKingValidators.notOnlyWhitespace]),
+        street: new FormControl('', [Validators.required, Validators.minLength(2),
+        ShoppingKingValidators.notOnlyWhitespace]),
+        city: new FormControl('', [Validators.required, Validators.minLength(2),
+        ShoppingKingValidators.notOnlyWhitespace]),
         state: new FormControl('', [Validators.required]),
         country: new FormControl('', [Validators.required]),
-        zipCode: new FormControl('', [Validators.required, Validators.minLength(2), 
-                                ShoppingKingValidators.notOnlyWhitespace])
+        zipCode: new FormControl('', [Validators.required, Validators.minLength(2),
+        ShoppingKingValidators.notOnlyWhitespace])
       }),
       billingAddress: this.formBuilder.group({
-        street: new FormControl('', [Validators.required, Validators.minLength(2), 
-                                  ShoppingKingValidators.notOnlyWhitespace]),
-        city: new FormControl('', [Validators.required, Validators.minLength(2), 
-                                  ShoppingKingValidators.notOnlyWhitespace]),
+        street: new FormControl('', [Validators.required, Validators.minLength(2),
+        ShoppingKingValidators.notOnlyWhitespace]),
+        city: new FormControl('', [Validators.required, Validators.minLength(2),
+        ShoppingKingValidators.notOnlyWhitespace]),
         state: new FormControl('', [Validators.required]),
         country: new FormControl('', [Validators.required]),
-        zipCode: new FormControl('', [Validators.required, Validators.minLength(2), 
-                                ShoppingKingValidators.notOnlyWhitespace])
+        zipCode: new FormControl('', [Validators.required, Validators.minLength(2),
+        ShoppingKingValidators.notOnlyWhitespace])
       }),
       creditCard: this.formBuilder.group({
 
@@ -111,33 +111,34 @@ export class CheckoutComponent implements OnInit {
       }
     );
   }
+
   setupStripePaymentForm() {
-    
+
     // get a handle to stripe elements
     var elements = this.stripe.elements();
 
     // Create a card element ... and hide the zip-code field
-    this.cardElement = elements.create('card',{ hidePostalCode:true });
+    this.cardElement = elements.create('card', { hidePostalCode: true });
 
     // Add an instance of card UI component into 'card-element'
     this.cardElement.mount('#card-element');
 
     // Add event binding for the 'change' event on the card element
-    this.cardElement.on('change',(event) =>{
+    this.cardElement.on('change', (event) => {
 
       this.displayError = document.getElementById('card-errors');
 
-      if (event.complete){
-        this.displayError.textContent ="";
-      } else if (event.error){
+      if (event.complete) {
+        this.displayError.textContent = "";
+      } else if (event.error) {
         // show validation error customer
         this.displayError.textContent = event.error.message;
       }
-    })
+    });
 
   }
   reviewCartDetails() {
-    
+
     // subscribe to cartService.totalQuantity
     this.cartService.totalQuantity.subscribe(
       totalQuantity => this.totalQuantity = totalQuantity
@@ -176,7 +177,7 @@ export class CheckoutComponent implements OnInit {
 
     if (event.target.checked) {
       this.checkoutFormGroup.controls['billingAddress']
-            .setValue(this.checkoutFormGroup.controls['shippingAddress'].value);
+        .setValue(this.checkoutFormGroup.controls['shippingAddress'].value);
 
       // bug fix for states
       this.billingAddressStates = this.shippingAddressStates;
@@ -188,7 +189,7 @@ export class CheckoutComponent implements OnInit {
       // bug fix for states
       this.billingAddressStates = [];
     }
-    
+
   }
 
   onSubmit() {
@@ -217,14 +218,12 @@ export class CheckoutComponent implements OnInit {
     // populate purchase - customer
     purchase.customer = this.checkoutFormGroup.controls['customer'].value;
 
-
     // populate purchase - shipping address
     purchase.shippingAddress = this.checkoutFormGroup.controls['shippingAddress'].value;
     const shippingState: State = JSON.parse(JSON.stringify(purchase.shippingAddress.state));
     const shippingCountry: Country = JSON.parse(JSON.stringify(purchase.shippingAddress.country));
     purchase.shippingAddress.state = shippingState.name;
     purchase.shippingAddress.country = shippingCountry.name;
-    
 
     // populate purchase - billing address
     purchase.billingAddress = this.checkoutFormGroup.controls['billingAddress'].value;
@@ -232,27 +231,57 @@ export class CheckoutComponent implements OnInit {
     const billingCountry: Country = JSON.parse(JSON.stringify(purchase.billingAddress.country));
     purchase.billingAddress.state = billingState.name;
     purchase.billingAddress.country = billingCountry.name;
-    
+
+
     // populate purchase - order and orderItems
     purchase.order = order;
     purchase.orderItems = orderItems;
 
-    // call REST API via the CheckoutService
-    // next -> sucess  , error -> error
-    this.checkoutService.placeOrder(purchase).subscribe(
-      {
-        next: response =>{
-          alert(`Your order have been received.\nOrder tracking number: ${response.orderTrackingNumber}`)
-        
-          // reset cart
-          this.resetCart();
-        },
-        error: err => {
-          alert(`There wan an error: ${err.message}`);
+    // computer payment info
+    this.paymentInfo.amount = Math.round(this.totalPrice * 100);
+    this.paymentInfo.currency = "usd";
+
+    console.log(`this.paymentInfo.amount: ${this.paymentInfo.amount}`);
+    // if valid form then
+    // - create payment intent
+    // - confirm card payment
+    // - place order
+
+    if (!this.checkoutFormGroup.invalid && this.displayError.textContent === "") {
+      this.checkoutService.createPaymentIntent(this.paymentInfo).subscribe(
+        (paymentIntentResponse) => {
+          this.stripe.confirmCardPayment(paymentIntentResponse.client_secret,
+            {
+              payment_method: {
+                card: this.cardElement
+              }
+            }, { handleActions: false })
+            .then(function (result) {
+              if (result.error) {
+                /// inform the customer there was an error
+                alert(`There was an error: ${result.error.message}`);
+              } else {
+                // call REST API via CheckoutService
+                this.checkoutService.placeOrder(purchase).subscribe({
+                  next: response => {
+                    alert(`Your order have been received.\nOrder tracking number: ${response.orderTrackingNumber}`)
+
+                    // reset card
+                    this.resetCart();
+                  },
+                  error: err => {
+                    alert(`There wan an error: ${err.message}`);
+                  }
+                })
+              }
+            }.bind(this));
         }
-        
-      }
-    );
+      );
+    }
+    else {
+      this.checkoutFormGroup.markAllAsTouched();
+      return;
+    }
   }
 
   resetCart() {
@@ -308,7 +337,7 @@ export class CheckoutComponent implements OnInit {
       data => {
 
         if (formGroupName === 'shippingAddress') {
-          this.shippingAddressStates = data; 
+          this.shippingAddressStates = data;
         }
         else {
           this.billingAddressStates = data;
